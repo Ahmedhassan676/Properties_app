@@ -11,7 +11,7 @@ gases_list = ['water', 'hydrogen', 'helium', 'nitrogen', 'carbon dioxide', 'hydr
 def thermo_prop(sg,t):
         t = 1.8*t+32
         thermo_dict = {}
-        thermal_coductivity = (0.813/sg)*(1-0.0003*(t-32))
+        thermal_coductivity = (0.813/sg)*(1-0.0003*(t-32)) * 0.41337910000000005
         cp = (1/np.sqrt(sg))*(0.388+0.00045*t)
         cv = cp-(0.09/sg)
         latent_heat = (1/sg)*(110.9-0.09*t)
