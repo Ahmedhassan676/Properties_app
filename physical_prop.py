@@ -14,7 +14,7 @@ def thermo_prop(sg,t):
         thermal_coductivity = (0.813/sg)*(1-0.0003*(t-32)) * 0.41337910000000005
         cp = (1/np.sqrt(sg))*(0.388+0.00045*t)
         cv = cp-(0.09/sg)
-        latent_heat = (1/sg)*(110.9-0.09*t)
+        latent_heat = (1/sg)*(110.9-0.09*t) * 0.555927
         thermo_dict['thermal_conductivity'] = thermal_coductivity
         thermo_dict['Cp'] = cp
         thermo_dict['Cv'] = cv
