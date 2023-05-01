@@ -25,7 +25,7 @@ def main():
     if 'Gases H.Cs' in phases:
         try:
             # Define the pipe and conditions
-            pressure = float(st.number_input('Pressure in kg/cm2.a'))*98.0665
+            pressure = float(st.number_input('Pressure in kg/cm2.a'))*98066.5
             temperature_K = float(st.number_input('Temperature in C')) + 273.15
             composition = st.multiselect('gases composition', gases_list)
             composition_table = pd.DataFrame(index=composition,columns=['mole fraction%'])
