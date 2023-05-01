@@ -48,9 +48,28 @@ def main():
                 st.write(thermo_dict_gas)
         except IndexError: pass
     if 'Liquid H.Cs' in phases:
-        
         temperature = float(st.number_input('Temperature in C')) 
         sg = float(st.number_input('Specific gravity'))
+        api = (141.5/sg) - 131.5
+        if api <=14.9:
+           eta= 0.00035
+        elif api <= 34.9:
+           eta= 0.0004
+        elif api <= 50.9:
+           eta= 0.0005
+        elif api <= 63.9:
+           eta= 0.0006
+        elif api <= 78.9:
+           eta= 0.0007
+        elif api <= 88.9:
+           eta= 0.0008
+        elif api <= 93.9:
+           eta= 0.00035 
+        elif api <= 100:
+           eta= 0.0009   
+        else: st.write("please enter a valid Specific gravity") 
+        density = sg*1000*(1-eta*(temperature*1.8-60))
         st.write(thermo_prop(sg,temperature))
+        st.write("density at {} equals {} kg/m3".format(temperature, density))
 if __name__ == '__main__':
     main()
