@@ -1,0 +1,7 @@
+streamlit 
+thermo
+fluids
+math
+pandas
+numpy
+ht
