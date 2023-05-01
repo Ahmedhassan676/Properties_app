@@ -68,7 +68,7 @@ def main():
         elif api <= 100:
            eta= 0.0009   
         else: st.write("please enter a valid Specific gravity") 
-        density = sg*1000*(1-eta*(temperature*1.8-60))
+        density = sg*1000*(1-eta*((temperature*1.8+32)-60))
         st.write(thermo_prop(sg,temperature))
         st.write("density at {} equals {} kg/m3".format(temperature, density))
 if __name__ == '__main__':
