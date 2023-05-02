@@ -67,6 +67,25 @@ def main():
                             C = np.linalg.solve(A, B)
                             st.write(C)
                             st.write(C[0]+temperature*C[1])
+                        else:
+               
+                            # define the points (x1, y1) and (x2, y2)
+                            x1 = temperature1+273.15
+                            y1 = float(prop_table_st.loc[i,'point 1'])
+                            x2 = temperature2+273.15
+                            y2 = float(prop_table_st.loc[i,'point 2'])
+
+                            # compute the values of z1 and z2
+                            z1 = math.log(math.log(y1))
+                            z2 = math.log(math.log(y2))
+
+                            # solve for a and b
+                            a = (z2 - z1) / (x2 - x1)
+                            b = z1 - a * x1
+                            viscosity = np.exp(a*(temperature+273.15)+b)
+                            # print the values of a and b
+                            st.write(viscosity)
+                       
             temperature = float(st.number_input('fluid Temperature in C', key='target_temp1'))
             sg = float(st.number_input('Specific gravity at 15.56 C'))
             api = (141.5/sg) - 131.5
