@@ -80,7 +80,7 @@ def main():
                             z2 = math.log(math.log(y2))
 
                             # solve for a and b
-                            a = (z2 - z1) / (x2 - x1)
+                            a = (z2 - z1) / (x1 - x2)
                             b = z1 - a * x1
                             viscosity = np.exp(a*(temperature+273.15)+b)
                             # print the values of a and b
