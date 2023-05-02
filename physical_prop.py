@@ -82,7 +82,7 @@ def main():
                             # solve for a and b
                             a = (z2 - z1) / (x1 - x2)
                             b = z1 - a * x1
-                            viscosity = np.exp(a*(temperature+273.15)+b)
+                            viscosity = 10**(a*(temperature+273.15)+b)
                             # print the values of a and b
                             st.write(viscosity)
                        
