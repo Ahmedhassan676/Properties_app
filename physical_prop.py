@@ -76,8 +76,8 @@ def main():
                             y2 = float(prop_table_st.loc[i,'point 2'])
 
                             # compute the values of z1 and z2
-                            z1 = math.log(math.log(y1))
-                            z2 = math.log(math.log(y2))
+                            z1 = np.log10(y1)
+                            z2 = np.log10(y2)
 
                             # solve for a and b
                             a = (z2 - z1) / (x2 - x1)
