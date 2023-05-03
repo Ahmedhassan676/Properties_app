@@ -126,7 +126,7 @@ def main():
             density = sg*1000*(1-eta*((temperature*1.8+32)-60))
             prop_calc_table = thermo_prop(sg,temperature,prop_calc_table)
             prop_calc_table.loc['Density'] = [density,'Nelson']
-            st.write(prop_calc_table)
+            st.write(prop_calc_table.dropna())
             
         except ZeroDivisionError: pass
 if __name__ == '__main__':
