@@ -54,7 +54,7 @@ def main():
                 prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Cvg/4184
                 prop_calc_table.loc['viscosity','Calculated_properties'] = gas_mixture.mu*1000
                 prop_calc_table.loc[:,'Method']= 'Thermo Library'
-                st.write(prop_calc_table)
+                st.write(prop_calc_table.dropna())
         except IndexError: pass
     elif phases  == 'Liquid H.Cs':
         try:
