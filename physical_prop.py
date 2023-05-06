@@ -84,7 +84,7 @@ def thermo_prop_LorGas(type):
                         prop_calc_table.loc['Cp','Calculated_properties'] = gas_mixture.Cpl/4184
                         prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Prl/4184
                         prop_calc_table.loc['viscosity','Calculated_properties'] = gas_mixture.mul*1000
-                        prop_calc_table.loc['latent heat','Calculated_properties'] = gas_mixture.Hvaps/4184
+                        #prop_calc_table.loc['latent heat','Calculated_properties'] = gas_mixture.Hvaps/4184
                         prop_calc_table.loc[:,'Method']= 'Thermo Library'
                         st.write(prop_calc_table)
             except IndexError: pass
