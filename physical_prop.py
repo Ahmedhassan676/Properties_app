@@ -8,10 +8,9 @@ import streamlit as st
 gases_list = ['water', 'hydrogen', 'nitrogen', 'carbon dioxide', 'hydrogen sulfide','methane',
 'ethane', 'propane', 'isobutane', 'n-butane', 'isopentane', 'n-pentane', 'hexane',
 'heptane', 'octane', 'nonane']
+liquid_list= ['water','ethanol']
 def thermo_prop(sg,t,prop_calc_table):
         t = 1.8*t+32
-        
-        
         thermal_coductivity = (0.813/sg)*(1-0.0003*(t-32)) *0.14422790000000002
         cp = (1/np.sqrt(sg))*(0.388+0.00045*t)
         cv = cp-(0.09/sg)
@@ -26,36 +25,72 @@ def thermo_prop(sg,t,prop_calc_table):
         prop_calc_table.loc['latent heat','Calculated_properties']= latent_heat
         prop_calc_table.loc[['Cv','latent heat'],'Method']= 'Bureau Report 1929'
         return prop_calc_table
-def main():
-    
-    phases  = st.selectbox('fluids presesnt',('vapor H.Cs', 'Liquid H.Cs', 'Steam', 'water', 'Gases H.Cs'), key='phases')
-    if phases  == 'Gases H.Cs':
+def thermo_prop_LorGas(type):
         props = ['density', 'Cp','Cv', 'thermal conductivity','latent heat','viscosity']
         prop_calc_table = pd.DataFrame(index=props,columns=['Calculated_properties','Method'])
-        try:
-            # Define the pipe and conditions
-            pressure = float(st.number_input('Pressure in kg/cm2.a'))*98066.5
-            temperature_K = float(st.number_input('Temperature in C')) + 273.15
-            composition = st.multiselect('gases composition', gases_list)
-            composition_table = pd.DataFrame(index=composition,columns=['mole fraction%'])
-            
-            comp_table = st.experimental_data_editor(composition_table)
-            
-            
-            mole_fractions = {comp_table.index[i]: comp_table['mole fraction%'].astype('float64')[i]/100 for i in range(len(comp_table.index))}
-            if sum(comp_table['mole fraction%'].astype('float64')) == 100:
+        if type == 'Gas':
+            try:
+                # Define the pipe and conditions
+                pressure = float(st.number_input('Pressure in kg/cm2.a'))*98066.5
+                temperature_K = float(st.number_input('Temperature in C')) + 273.15
+                composition = st.multiselect('Components', gases_list)
+                composition_table = pd.DataFrame(index=composition,columns=['mole fraction%'])
                 
-                #mole_fractions =  {"methane": 0.8, "ethane": 0.2}
-                gas_mixture = Mixture(list(mole_fractions.keys()), zs=list(mole_fractions.values()), T=temperature_K, P=pressure)
+                comp_table = st.experimental_data_editor(composition_table)
                 
-                prop_calc_table.loc['thermal conductivity','Calculated_properties'] = gas_mixture.kg
-                prop_calc_table.loc['density','Calculated_properties'] = gas_mixture.rho
-                prop_calc_table.loc['Cp','Calculated_properties'] = gas_mixture.Cp/4184
-                prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Cvg/4184
-                prop_calc_table.loc['viscosity','Calculated_properties'] = gas_mixture.mu*1000
-                prop_calc_table.loc[:,'Method']= 'Thermo Library'
-                st.write(prop_calc_table.dropna())
-        except IndexError: pass
+                gas_mixture = Mixture(list(gases_list), zs=[1/len(gases_list) for i in range(len(gases_list))], T=298, P=100000)
+                mole_fractions = {comp_table.index[i]: comp_table['mole fraction%'].astype('float64')[i]/100 for i in range(len(comp_table.index))}
+                if st.button("Calculate", key = 'calculations_tablegas'):
+                    if sum(comp_table['mole fraction%'].astype('float64')) == 100:
+                        
+                        #mole_fractions =  {"methane": 0.8, "ethane": 0.2}
+                        gas_mixture = Mixture(list(mole_fractions.keys()), zs=list(mole_fractions.values()), T=temperature_K, P=pressure)
+                        
+                        if gas_mixture.phase == 'g':
+                            prop_calc_table.loc['thermal conductivity','Calculated_properties'] = gas_mixture.kg
+                            prop_calc_table.loc['density','Calculated_properties'] = gas_mixture.rho
+                            prop_calc_table.loc['Cp','Calculated_properties'] = gas_mixture.Cp/4184
+                            prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Cvg/4184
+                            prop_calc_table.loc['viscosity','Calculated_properties'] = gas_mixture.mu*1000
+                            prop_calc_table.loc['Molecular Weight','Calculated_properties'] = gas_mixture.MWg*1000
+                            prop_calc_table.loc[:,'Method']= 'Thermo Library'
+                            st.write(prop_calc_table)
+                        else: st.warning('Liquid phase presence in fluid')
+                        
+            except IndexError: pass
+        if type == 'Liquid':
+            try:
+                # Define the pipe and conditions
+                pressure = float(st.number_input('Pressure in kg/cm2.a'))*98066.5
+                temperature_K = float(st.number_input('Temperature in C')) + 273.15
+                composition = st.multiselect('Components', liquid_list)
+                composition_table = pd.DataFrame(index=composition,columns=['weight fraction%'])
+                
+                comp_table = st.experimental_data_editor(composition_table)
+                
+                
+                mole_fractions = {comp_table.index[i]: comp_table['weight fraction%'].astype('float64')[i]/100 for i in range(len(comp_table.index))}
+                if st.button("Calculate", key = 'calculations_tableliquid'):
+                    if sum(comp_table['weight fraction%'].astype('float64')) == 100:
+                        
+                        #mole_fractions =  {"methane": 0.8, "ethane": 0.2}
+                        gas_mixture = Mixture(list(mole_fractions.keys()), ws=list(mole_fractions.values()), T=temperature_K, P=pressure)
+                        
+                        prop_calc_table.loc['thermal conductivity','Calculated_properties'] = gas_mixture.kl
+                        prop_calc_table.loc['density','Calculated_properties'] = gas_mixture.rhol
+                        prop_calc_table.loc['Cp','Calculated_properties'] = gas_mixture.Cpl/4184
+                        prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Prl/4184
+                        prop_calc_table.loc['viscosity','Calculated_properties'] = gas_mixture.mul*1000
+                        prop_calc_table.loc[:,'Method']= 'Thermo Library'
+                        st.write(prop_calc_table)
+            except IndexError: pass
+def main():
+    
+    phases  = st.selectbox('fluids presesnt',('Liquid H.Cs', 'liquid', 'Gas'), key='phases')
+    if phases  == 'Gas':
+        thermo_prop_LorGas('Gas')
+    if phases == 'liquid':
+        thermo_prop_LorGas('Liquid')
     elif phases  == 'Liquid H.Cs':
         try:
             props = ['specific gravity', 'Cp','Cv', 'thermal conductivity','latent heat','viscosity']
@@ -126,7 +161,7 @@ def main():
             density = sg*1000*(1-eta*((temperature*1.8+32)-60))
             prop_calc_table = thermo_prop(sg,temperature,prop_calc_table)
             prop_calc_table.loc['Density'] = [density,'Nelson']
-            st.write(prop_calc_table.dropna())
+            st.write(prop_calc_table)
             
         except ZeroDivisionError: pass
 if __name__ == '__main__':
