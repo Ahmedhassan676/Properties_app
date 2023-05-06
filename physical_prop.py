@@ -55,6 +55,7 @@ def thermo_prop_LorGas(type):
                             prop_calc_table.loc['viscosity','Calculated_properties'] = gas_mixture.mu*1000
                             prop_calc_table.loc['Molecular Weight','Calculated_properties'] = gas_mixture.MWg
                             prop_calc_table.loc['Compressibility factor','Calculated_properties'] = gas_mixture.Z
+                            prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = gas_mixture.isentropic_exponent
                             prop_calc_table.loc[:,'Method']= 'Thermo Library'
                             st.write(prop_calc_table)
                         else: st.warning('Liquid phase presence in fluid')
