@@ -8,7 +8,9 @@ import streamlit as st
 gases_list = ['water', 'hydrogen', 'nitrogen', 'carbon dioxide', 'hydrogen sulfide','methane',
 'ethane', 'propane', 'isobutane', 'n-butane', 'isopentane', 'n-pentane', 'hexane',
 'heptane', 'octane', 'nonane']
-liquid_list= ['water', 'ethanol', 'methanol', 'acetic acid', 'propylene glycol', 'glycerol', 'dimethyl sulfoxide', 'benzene', 'toluene', 'xylene', 'acetone', 'butanol', 'pentanol', 'hexanol', 'heptanol', 'octanol', 'nonanol', 'decanol', 'ethylene glycol', 'diethylene glycol', 'propylene carbonate', 'tetrahydrofuran', 'acetonitrile', 'formamide', 'nitromethane', 'isopropyl alcohol', 'methyl ethyl ketone', 'dioxane', 'pyridine', 'hexamethylphosphoramide','dimethylamine', 'diethylamine', 'triethylamine', 'trimethylamine', 'ethanolamine', 'diethanolamine', 'triethanolamine', 'methyldiethanolamine', 'piperazine']
+liquid_list= ['water', 'ethanol', 'methanol', 'acetic acid', 'propylene glycol', 'glycerol', 'dimethyl sulfoxide', 'benzene', 'toluene', 'xylene', 'acetone', 'butanol', 'pentanol', 'hexanol', 'heptanol', 'octanol', 'nonanol', 'decanol', 'ethylene glycol', 'diethylene glycol', 'propylene carbonate', 'tetrahydrofuran', 'acetonitrile', 'formamide', 'isopropyl alcohol', 'methyl ethyl ketone', 'dioxane', 'pyridine', 'hexamethylphosphoramide','dimethylamine', 'diethylamine', 'triethylamine', 'trimethylamine', 'ethanolamine', 'diethanolamine', 'triethanolamine', 'methyldiethanolamine', 'piperazine']
+c = gases_list + liquid_list
+mixture = Mixture(c, zs=[1/(len(c)) for i in range(len(c))], T=298, P=100000)
 #['water','ethanol','dimethylamine', 'diethylamine', 'triethylamine', 'trimethylamine', 'ethanolamine', 'diethanolamine', 'triethanolamine', 'methyldiethanolamine', 'piperazine']
 def thermo_prop(sg,t,prop_calc_table):
         t = 1.8*t+32
@@ -26,6 +28,15 @@ def thermo_prop(sg,t,prop_calc_table):
         prop_calc_table.loc['latent heat','Calculated_properties']= latent_heat
         prop_calc_table.loc[['Cv','latent heat'],'Method']= 'Bureau Report 1929'
         return prop_calc_table
+def vis_1point(t,analysis_temp,analysis_mu):
+    T =t
+    mu = analysis_mu
+    c = -0.8696
+    b= np.log10(mu)-c
+    s = 0.2008*b+1.6180
+    log_mu = (b/(1+((T-analysis_temp)/310.93))**s)+c
+    mu_calc =10**log_mu
+    return mu_calc
 def thermo_prop_LorGas(type):
         props = ['density', 'Cp','Cv', 'thermal conductivity','latent heat','viscosity']
         prop_calc_table = pd.DataFrame(index=props,columns=['Calculated_properties','Method'])
@@ -38,8 +49,6 @@ def thermo_prop_LorGas(type):
                 composition_table = pd.DataFrame(index=composition,columns=['mole fraction%'])
                 
                 comp_table = st.experimental_data_editor(composition_table)
-                
-                gas_mixture = Mixture(list(gases_list), zs=[1/len(gases_list) for i in range(len(gases_list))], T=298, P=100000)
                 mole_fractions = {comp_table.index[i]: comp_table['mole fraction%'].astype('float64')[i]/100 for i in range(len(comp_table.index))}
                 if st.button("Calculate", key = 'calculations_tablegas'):
                     if sum(comp_table['mole fraction%'].astype('float64')) == 100:
@@ -97,52 +106,30 @@ def main():
         thermo_prop_LorGas('Liquid')
     elif phases  == 'Liquid H.Cs':
         try:
-            props = ['specific gravity', 'Cp','Cv', 'thermal conductivity','latent heat','viscosity']
+            props = ['Cp','Cv', 'thermal conductivity','latent heat','viscosity']
             prop_calc_table = pd.DataFrame(index=props,columns=['Calculated_properties','Method'])
             
             two_points = st.selectbox('Use 2 points of a certain property?',('No', 'Yes'), key='two_points')
             if two_points == "Yes":
                 temperature = float(st.number_input('fluid Temperature in C', key='target_temp')) 
-                prop_menu = st.multiselect('slect property with two data points',['viscosity', 'specific gravity', 'Cp', 'thermal conductivity'])
+                prop_menu = st.multiselect('select property with two data points',['viscosity', 'specific gravity', 'Cp', 'thermal conductivity'])
                 temperature1 = float(st.number_input('point 1 Temperature in C', key='T1')) 
                 temperature2 = float(st.number_input('point 1 Temperature in C', key='T2')) 
                 prop_table = pd.DataFrame(index=prop_menu,columns=['point 1','point 2'])
                 prop_table_st = st.experimental_data_editor(prop_table)
                 sg = float(st.number_input('Specific gravity at 15.56 C'))
-                if st.button("Calculate", key = 'calculations_tableLiq'):
-                    
-                    for i in prop_menu:
-                        
-                        if i != 'viscosity':
-                            
-                            A = np.array([[1,temperature1], [1,temperature2]])
-                            B = np.array([float(prop_table_st.loc[i,'point 1']),float(prop_table_st.loc[i,'point 2'])])
-                            C = np.linalg.solve(A, B)
-                            prop_calc_table.loc[i,'Calculated_properties']=C[0]+temperature*C[1]
-                            prop_calc_table.loc[i,'Method']= 'Two Linear points'
-                            
-                        else:
-               
-                            # define the points (x1, y1) and (x2, y2)
-                            x1 = temperature1+273.15
-                            y1 = float(prop_table_st.loc[i,'point 1'])
-                            x2 = temperature2+273.15
-                            y2 = float(prop_table_st.loc[i,'point 2'])
-
-                            # compute the values of z1 and z2
-                            z1 = np.log10(y1)
-                            z2 = np.log10(y2)
-
-                            # solve for a and b
-                            a = (z2 - z1) / (x2 - x1)
-                            b = z1 - a * x1
-                            viscosity = 10**(a*(temperature+273.15)+b)
-                            # print the values of a and b
-                            prop_calc_table.loc[i,'Calculated_properties'] = viscosity
-                            prop_calc_table.loc[i,'Method']= 'Two Log points'
+                
             if two_points != 'Yes':           
                 temperature = float(st.number_input('fluid Temperature in C', key='target_temp1'))
                 sg = float(st.number_input('Specific gravity at 15.56 C'))
+                vis_1point_select  = st.selectbox('Calculate viscosity using 1 point?',('No', 'Yes'), key='vis_1pointer')
+                if vis_1point_select == 'Yes':
+                    temperature_analysis = float(st.number_input('analysis Temperature in C', key='analysis_temp1'))
+                    vis_analysis = float(st.number_input('Viscosity at analysis temperature', key='analysis_vis'))
+                    viscosity_calc = vis_1point(temperature,temperature_analysis,vis_analysis)
+                    prop_calc_table.loc['viscosity','Calculated_properties'] = viscosity_calc
+                    prop_calc_table.loc['viscosity','Method']= 'One point - A. Miadonye and V.R. Puttagunta'
+                    
             
             api = (141.5/sg) - 131.5
             if api <=14.9:
@@ -165,8 +152,41 @@ def main():
             density = sg*1000*(1-eta*((temperature*1.8+32)-60))
             prop_calc_table = thermo_prop(sg,temperature,prop_calc_table)
             prop_calc_table.loc['Density'] = [density,'Nelson']
-            st.write(prop_calc_table)
-            
         except ZeroDivisionError: pass
+        if st.button("Calculate", key = 'calculations_tableLiq'):
+                
+                if two_points == 'Yes':
+                    for i in prop_menu:
+                        
+                        if i != 'viscosity':
+                            
+                            A = np.array([[1,temperature1], [1,temperature2]])
+                            B = np.array([float(prop_table_st.loc[i,'point 1']),float(prop_table_st.loc[i,'point 2'])])
+                            C = np.linalg.solve(A, B)
+                            prop_calc_table.loc[i,'Calculated_properties']=C[0]+temperature*C[1]
+                            prop_calc_table.loc[i,'Method']= 'Two Linear points'
+                            
+                            
+                        else:
+                
+                            # define the points (x1, y1) and (x2, y2)
+                            x1 = temperature1+273.15
+                            y1 = float(prop_table_st.loc[i,'point 1'])
+                            x2 = temperature2+273.15
+                            y2 = float(prop_table_st.loc[i,'point 2'])
+
+                            # compute the values of z1 and z2
+                            z1 = np.log10(y1)
+                            z2 = np.log10(y2)
+
+                            # solve for a and b
+                            a = (z2 - z1) / (x2 - x1)
+                            b = z1 - a * x1
+                            viscosity = 10**(a*(temperature+273.15)+b)
+                            # print the values of a and b
+                            prop_calc_table.loc[i,'Calculated_properties'] = viscosity
+                            prop_calc_table.loc[i,'Method']= 'Two Log points'
+                    st.write(prop_calc_table)
+                else: st.write(prop_calc_table)
 if __name__ == '__main__':
     main()
