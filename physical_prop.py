@@ -76,7 +76,7 @@ def thermo_prop_LorGas(type):
                 if st.button("Calculate", key = 'calculations_tableliquid'):
                     if sum(comp_table['weight fraction%'].astype('float64')) == 100:
                         
-                        #mole_fractions =  {"methane": 0.8, "ethane": 0.2}
+                        
                         gas_mixture = Mixture(list(mole_fractions.keys()), ws=list(mole_fractions.values()), T=temperature_K, P=pressure)
                         
                         prop_calc_table.loc['thermal conductivity','Calculated_properties'] = gas_mixture.kl
@@ -84,6 +84,7 @@ def thermo_prop_LorGas(type):
                         prop_calc_table.loc['Cp','Calculated_properties'] = gas_mixture.Cpl/4184
                         prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Prl/4184
                         prop_calc_table.loc['viscosity','Calculated_properties'] = gas_mixture.mul*1000
+                        prop_calc_table.loc['latent heat','Calculated_properties'] = gas_mixture.Hvap_Tbs/4184
                         prop_calc_table.loc[:,'Method']= 'Thermo Library'
                         st.write(prop_calc_table)
             except IndexError: pass
