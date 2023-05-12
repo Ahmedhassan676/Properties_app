@@ -73,22 +73,21 @@ def thermo_prop_LorGas(type):
                         
                         gas_mixture = flasher.flash(P=pressure, T=temperature_K,zs=zs)
                         
-                        if gas_mixture.phase == 'V':
-                            prop_calc_table.loc['Phase','Calculated_properties'] = gas_mixture.phase
-                            prop_calc_table.loc['Vapor Fraction','Calculated_properties'] = gas_mixture.VF
-                            prop_calc_table.loc['thermal conductivity','Calculated_properties'] = gas_mixture.k()
-                            prop_calc_table.loc['density','Calculated_properties'] = gas_mixture.rho_mass()
-                            prop_calc_table.loc['Cp','Calculated_properties'] = gas_mixture.Cp_mass()/4184
-                            prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Cv_mass()/4184
-                            prop_calc_table.loc['viscosity','Calculated_properties'] = gas_mixture.mu()*1000
-                            prop_calc_table.loc['Molecular Weight','Calculated_properties'] = gas_mixture.MW()
-                            prop_calc_table.loc['Compressibility factor','Calculated_properties'] = gas_mixture.Z()
-                            prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = gas_mixture.isentropic_exponent()
-                            prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True)
-                            prop_calc_table.loc[:,'Method']= 'Thermo Library'
-                            st.write(prop_calc_table)
-                        else: 
-                            st.warning('Liquid phase presence in fluid')
+                        
+                        prop_calc_table.loc['Phase','Calculated_properties'] = gas_mixture.phase
+                        prop_calc_table.loc['Vapor Fraction','Calculated_properties'] = gas_mixture.VF
+                        prop_calc_table.loc['thermal conductivity','Calculated_properties'] = gas_mixture.k()
+                        prop_calc_table.loc['density','Calculated_properties'] = gas_mixture.rho_mass()
+                        prop_calc_table.loc['Cp','Calculated_properties'] = gas_mixture.Cp_mass()/4184
+                        prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Cv_mass()/4184
+                        prop_calc_table.loc['viscosity','Calculated_properties'] = gas_mixture.mu()*1000
+                        prop_calc_table.loc['Molecular Weight','Calculated_properties'] = gas_mixture.MW()
+                        prop_calc_table.loc['Compressibility factor','Calculated_properties'] = gas_mixture.Z()
+                        prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = gas_mixture.isentropic_exponent()
+                        prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True)
+                        prop_calc_table.loc[:,'Method']= 'Thermo Library'
+                        st.write(prop_calc_table)
+                        
                             
                         
             except IndexError: pass
