@@ -91,6 +91,7 @@ def thermo_prop_LorGas(type):
                             
                         
             except IndexError: pass
+            except (ValueError): st.write('Please check your input')
              
         if type == 'Liquid':
             try:
@@ -128,6 +129,7 @@ def thermo_prop_LorGas(type):
                         st.write(prop_calc_table)
                         
             except IndexError: pass
+            except (ValueError): st.write('Please check your input')
 def main():
     
     phases  = st.selectbox('fluids presesnt',('Liquid H.Cs', 'liquid', 'Gas'), key='phases')
@@ -185,42 +187,43 @@ def main():
             prop_calc_table.loc['Density'] = [density,'Nelson']
         except ZeroDivisionError: pass
         if st.button("Calculate", key = 'calculations_tableLiq'):
-                
-                if two_points == 'Yes':
-                    for i in prop_menu:
-                        
-                        if i != 'viscosity':
+                try:
+                    if two_points == 'Yes':
+                        for i in prop_menu:
                             
-                            A = np.array([[1,temperature1], [1,temperature2]])
-                            B = np.array([float(prop_table_st.loc[i,'point 1']),float(prop_table_st.loc[i,'point 2'])])
-                            C = np.linalg.solve(A, B)
-                            prop_calc_table.loc[i,'Calculated_properties']=C[0]+temperature*C[1]
-                            prop_calc_table.loc[i,'Method']= 'Two Linear points'
-                            
-                            
-                        else:
-                
-                            # define the points (x1, y1) and (x2, y2)
-                            x1 = temperature1+273.15
-                            y1 = float(prop_table_st.loc[i,'point 1'])
-                            x2 = temperature2+273.15
-                            y2 = float(prop_table_st.loc[i,'point 2'])
+                            if i != 'viscosity':
+                                
+                                A = np.array([[1,temperature1], [1,temperature2]])
+                                B = np.array([float(prop_table_st.loc[i,'point 1']),float(prop_table_st.loc[i,'point 2'])])
+                                C = np.linalg.solve(A, B)
+                                prop_calc_table.loc[i,'Calculated_properties']=C[0]+temperature*C[1]
+                                prop_calc_table.loc[i,'Method']= 'Two Linear points'
+                                
+                                
+                            else:
+                    
+                                # define the points (x1, y1) and (x2, y2)
+                                x1 = temperature1+273.15
+                                y1 = float(prop_table_st.loc[i,'point 1'])
+                                x2 = temperature2+273.15
+                                y2 = float(prop_table_st.loc[i,'point 2'])
 
-                            # compute the values of z1 and z2
-                            z1 = np.log10(y1)
-                            z2 = np.log10(y2)
+                                # compute the values of z1 and z2
+                                z1 = np.log10(y1)
+                                z2 = np.log10(y2)
 
-                            # solve for a and b
-                            a = (z2 - z1) / (x2 - x1)
-                            b = z1 - a * x1
-                            viscosity = 10**(a*(temperature+273.15)+b)
-                            # print the values of a and b
-                            prop_calc_table.loc[i,'Calculated_properties'] = viscosity
-                            prop_calc_table.loc[i,'Method']= 'Two Log points'
-                            prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True).reindex(columns=['Calculated_properties', 'Units', 'Method'])
-                    st.write(prop_calc_table)
-                else:
-                    prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True).reindex(columns=['Calculated_properties', 'Units', 'Method'])
-                    st.write(prop_calc_table)
+                                # solve for a and b
+                                a = (z2 - z1) / (x2 - x1)
+                                b = z1 - a * x1
+                                viscosity = 10**(a*(temperature+273.15)+b)
+                                # print the values of a and b
+                                prop_calc_table.loc[i,'Calculated_properties'] = viscosity
+                                prop_calc_table.loc[i,'Method']= 'Two Log points'
+                                prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True).reindex(columns=['Calculated_properties', 'Units', 'Method'])
+                        st.write(prop_calc_table)
+                    else:
+                        prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True).reindex(columns=['Calculated_properties', 'Units', 'Method'])
+                        st.write(prop_calc_table)
+                except (ValueError,np.linalg.LinAlgError): st.write('Please check your points input')
 if __name__ == '__main__':
     main()
