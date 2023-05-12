@@ -25,6 +25,8 @@ flasher = FlashPureVLS(constants, correlations, liquids=[liquid], gas=gas, solid
 T1 = 273.15+30
 state_1 = flasher.flash(P=100000, T=T1,zs=zs)
     
+properties = {    "Mass": "kg",    "Length": "m",    "Time": "s",    "Temperature": "°C",    "Heat capacity": "Kcal/(kg*°C)",    "Enthalpy": "KCal/kg",    "thermal conductivity": "W/(m*°C)",    "Mass flow rate": "kg/hr",    "viscosity": "cP",    "density": "kg/m³","Cv": "Kcal/(kg*°C)","Cp": "Kcal/(kg*°C)"}
+s = pd.Series(properties)    
 
 
 def thermo_prop(sg,t,prop_calc_table):
@@ -54,7 +56,7 @@ def vis_1point(t,analysis_temp,analysis_mu):
     return mu_calc
 def thermo_prop_LorGas(type):
         props = ['density', 'Cp','Cv', 'thermal conductivity','viscosity']
-        prop_calc_table = pd.DataFrame(index=props,columns=['Calculated_properties','Method'])
+        prop_calc_table = pd.DataFrame(index=props,columns=['Calculated_properties'])
         if type == 'Gas':
             try:
                 # Define the pipe and conditions
@@ -76,12 +78,13 @@ def thermo_prop_LorGas(type):
                             prop_calc_table.loc['Vapor Fraction','Calculated_properties'] = gas_mixture.VF
                             prop_calc_table.loc['thermal conductivity','Calculated_properties'] = gas_mixture.k()
                             prop_calc_table.loc['density','Calculated_properties'] = gas_mixture.rho_mass()
-                            prop_calc_table.loc['Cp','Calculated_properties'] = gas_mixture.Cp()/4184
-                            prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Cv()/4184
+                            prop_calc_table.loc['Cp','Calculated_properties'] = gas_mixture.Cp_mass()/4184
+                            prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Cv_mass()/4184
                             prop_calc_table.loc['viscosity','Calculated_properties'] = gas_mixture.mu()*1000
                             prop_calc_table.loc['Molecular Weight','Calculated_properties'] = gas_mixture.MW()
                             prop_calc_table.loc['Compressibility factor','Calculated_properties'] = gas_mixture.Z()
                             prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = gas_mixture.isentropic_exponent()
+                            prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True)
                             prop_calc_table.loc[:,'Method']= 'Thermo Library'
                             st.write(prop_calc_table)
                         else: 
@@ -96,14 +99,14 @@ def thermo_prop_LorGas(type):
                 pressure = float(st.number_input('Pressure in kg/cm2.a'))*98066.5
                 temperature_K = float(st.number_input('Temperature in C')) + 273.15
                 composition = st.multiselect('Components', liquid_list)
-                composition_table = pd.DataFrame(index=composition,columns=['weight fraction%'])
+                composition_table = pd.DataFrame(index=composition,columns=['Volume fraction%'])
                 
                 comp_table = st.experimental_data_editor(composition_table)
                 
                 
-                mole_fractions = {comp_table.index[i]: comp_table['weight fraction%'].astype('float64')[i]/100 for i in range(len(comp_table.index))}
+                mole_fractions = {comp_table.index[i]: comp_table['Volume fraction%'].astype('float64')[i]/100 for i in range(len(comp_table.index))}
                 if st.button("Calculate", key = 'calculations_tableliquid'):
-                    if sum(comp_table['weight fraction%'].astype('float64')) == 100:
+                    if sum(comp_table['Volume fraction%'].astype('float64')) == 100:
                         
                         
                         zs = [mole_fractions[i] if i in mole_fractions.keys() else 0 for i in c]
@@ -115,12 +118,13 @@ def thermo_prop_LorGas(type):
                         prop_calc_table.loc['Vapor Fraction','Calculated_properties'] = gas_mixture.VF
                         prop_calc_table.loc['thermal conductivity','Calculated_properties'] = gas_mixture.k()
                         prop_calc_table.loc['density','Calculated_properties'] = gas_mixture.rho_mass()
-                        prop_calc_table.loc['Cp','Calculated_properties'] = gas_mixture.Cp()/4184
-                        prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Cv()/4184
+                        prop_calc_table.loc['Cp','Calculated_properties'] = gas_mixture.Cp_mass()/4184
+                        prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Cv_mass()/4184
                         prop_calc_table.loc['viscosity','Calculated_properties'] = gas_mixture.mu()*1000
                         prop_calc_table.loc['Molecular Weight','Calculated_properties'] = gas_mixture.MW()
                         prop_calc_table.loc['Compressibility factor','Calculated_properties'] = gas_mixture.Z()
                         prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = gas_mixture.isentropic_exponent()
+                        prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True)
                         prop_calc_table.loc[:,'Method']= 'Thermo Library'
                         st.write(prop_calc_table)
                         
@@ -214,7 +218,10 @@ def main():
                             # print the values of a and b
                             prop_calc_table.loc[i,'Calculated_properties'] = viscosity
                             prop_calc_table.loc[i,'Method']= 'Two Log points'
+                            prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True).reindex(columns=['Calculated_properties', 'Units', 'Method'])
                     st.write(prop_calc_table)
-                else: st.write(prop_calc_table)
+                else:
+                    prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True).reindex(columns=['Calculated_properties', 'Units', 'Method'])
+                    st.write(prop_calc_table)
 if __name__ == '__main__':
     main()
