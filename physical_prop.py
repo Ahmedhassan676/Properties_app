@@ -5,22 +5,25 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 from thermo import ChemicalConstantsPackage, PRMIX, CEOSLiquid, CEOSGas, FlashPureVLS
+from thermo.interaction_parameters import IPDB
 
 gases_list = ['water', 'hydrogen', 'nitrogen', 'carbon dioxide', 'hydrogen sulfide','methane',
 'ethane', 'propane', 'isobutane', 'n-butane', 'isopentane', 'n-pentane', 'hexane',
 'heptane', 'octane', 'nonane']
 liquid_list= ['water', 'ethanol', 'methanol', 'acetic acid', 'propylene glycol', 'glycerol', 'dimethyl sulfoxide', 'benzene', 'toluene', 'xylene', 'acetone', 'butanol', 'pentanol', 'hexanol', 'heptanol', 'octanol', 'nonanol', 'decanol', 'ethylene glycol', 'diethylene glycol', 'propylene carbonate', 'tetrahydrofuran', 'acetonitrile', 'formamide', 'isopropyl alcohol', 'methyl ethyl ketone', 'dioxane', 'pyridine', 'hexamethylphosphoramide','dimethylamine', 'diethylamine', 'triethylamine', 'trimethylamine', 'ethanolamine', 'diethanolamine', 'triethanolamine', 'methyldiethanolamine', 'piperazine']
 c = gases_list + liquid_list
+c.remove('water')
 if 'constants' not in st.session_state:
     st.session_state.constants, st.session_state.correlations = ChemicalConstantsPackage.from_IDs(c)
+    
 constants = st.session_state.constants
-correlations = st.session_state.correlations 
+correlations = st.session_state.correlations
+kijs = IPDB.get_ip_asymmetric_matrix('ChemSep PR', constants.CASs, 'kij')
+
 zs = [1/(len(c)) for i in range(len(c))]
-eos_kwargs = dict(Tcs=constants.Tcs, Pcs=constants.Pcs, omegas=constants.omegas)
-liquid = CEOSLiquid(PRMIX, HeatCapacityGases=correlations.HeatCapacityGases,
-eos_kwargs=eos_kwargs)
-gas = CEOSGas(PRMIX, HeatCapacityGases=correlations.HeatCapacityGases,
-eos_kwargs=eos_kwargs)
+eos_kwargs = {'Pcs': constants.Pcs, 'Tcs': constants.Tcs, 'omegas': constants.omegas, 'kijs': kijs}
+gas = CEOSGas(PRMIX, eos_kwargs=eos_kwargs, HeatCapacityGases=correlations.HeatCapacityGases)
+liquid = CEOSLiquid(PRMIX, eos_kwargs=eos_kwargs, HeatCapacityGases=correlations.HeatCapacityGases)
 flasher = FlashPureVLS(constants, correlations, liquids=[liquid], gas=gas, solids=[])
 T1 = 273.15+30
 state_1 = flasher.flash(P=100000, T=T1,zs=zs)
@@ -111,19 +114,19 @@ def thermo_prop_LorGas(type):
                         
                         zs = [mole_fractions[i] if i in mole_fractions.keys() else 0 for i in c]
                         
-                        gas_mixture = flasher.flash(P=pressure, T=temperature_K,zs=zs)
+                        mixture = flasher.flash(P=pressure, T=temperature_K,zs=zs)
                         
                         
-                        prop_calc_table.loc['Phase','Calculated_properties'] = gas_mixture.phase
-                        prop_calc_table.loc['Vapor Fraction','Calculated_properties'] = gas_mixture.VF
-                        prop_calc_table.loc['thermal conductivity','Calculated_properties'] = gas_mixture.k()
-                        prop_calc_table.loc['density','Calculated_properties'] = gas_mixture.rho_mass()
-                        prop_calc_table.loc['Cp','Calculated_properties'] = gas_mixture.Cp_mass()/4184
-                        prop_calc_table.loc['Cv','Calculated_properties'] = gas_mixture.Cv_mass()/4184
-                        prop_calc_table.loc['viscosity','Calculated_properties'] = gas_mixture.mu()*1000
-                        prop_calc_table.loc['Molecular Weight','Calculated_properties'] = gas_mixture.MW()
-                        prop_calc_table.loc['Compressibility factor','Calculated_properties'] = gas_mixture.Z()
-                        prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = gas_mixture.isentropic_exponent()
+                        prop_calc_table.loc['Phase','Calculated_properties'] = mixture.phase
+                        prop_calc_table.loc['Vapor Fraction','Calculated_properties'] = mixture.VF
+                        prop_calc_table.loc['thermal conductivity','Calculated_properties'] = mixture.k()
+                        prop_calc_table.loc['density','Calculated_properties'] = mixture.rho_mass()
+                        prop_calc_table.loc['Cp','Calculated_properties'] = mixture.Cp_mass()/4184
+                        prop_calc_table.loc['Cv','Calculated_properties'] = mixture.Cv_mass()/4184
+                        prop_calc_table.loc['viscosity','Calculated_properties'] = mixture.mu()*1000
+                        prop_calc_table.loc['Molecular Weight','Calculated_properties'] = mixture.MW()
+                        prop_calc_table.loc['Compressibility factor','Calculated_properties'] = mixture.Z()
+                        prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = mixture.isentropic_exponent()
                         prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True)
                         prop_calc_table.loc[:,'Method']= 'Thermo Library'
                         st.write(prop_calc_table)
