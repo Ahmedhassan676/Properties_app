@@ -31,6 +31,27 @@ state_1 = flasher.flash(P=100000, T=T1,zs=zs)
 properties = {    "Mass": "kg",    "Length": "m",    "Time": "s",    "Temperature": "°C",    "Heat capacity": "Kcal/(kg*°C)",    "Enthalpy": "KCal/kg",    "thermal conductivity": "W/(m*°C)",    "Mass flow rate": "kg/hr",    "viscosity": "cP",    "density": "kg/m³","Cv": "Kcal/(kg*°C)","Cp": "Kcal/(kg*°C)"}
 s = pd.Series(properties)    
 
+def density(sg,temperature):
+                api = (141.5/sg) - 131.5
+                if api <=14.9:
+                    eta= 0.00035
+                elif api <= 34.9:
+                    eta= 0.0004
+                elif api <= 50.9:
+                    eta= 0.0005
+                elif api <= 63.9:
+                    eta= 0.0006
+                elif api <= 78.9:
+                    eta= 0.0007
+                elif api <= 88.9:
+                    eta= 0.0008
+                elif api <= 93.9:
+                    eta= 0.00035 
+                elif api <= 100:
+                    eta= 0.0009   
+                else: st.write("please enter a valid Specific gravity") 
+                density = sg*1000*(1-eta*((temperature*1.8+32)-60))
+                return density
 
 def thermo_prop(sg,t,prop_calc_table):
         t = 1.8*t+32
@@ -48,14 +69,23 @@ def thermo_prop(sg,t,prop_calc_table):
         prop_calc_table.loc['latent heat','Calculated_properties']= latent_heat
         prop_calc_table.loc[['Cv','latent heat'],'Method']= 'Bureau Report 1929'
         return prop_calc_table
-def vis_1point(t,analysis_temp,analysis_mu):
-    T =t
-    mu = analysis_mu
-    c = -0.8696
-    b= np.log10(mu)-c
-    s = 0.2008*b+1.6180
-    log_mu = (b/(1+((T-analysis_temp)/310.93))**s)+c
-    mu_calc =10**log_mu
+def vis_1point(t,analysis_temp,analysis_mu,sg,unit):
+    if not unit:
+        T =t
+        mu = analysis_mu
+        c = -0.8696
+        b= np.log10(mu)-c
+        s = 0.2008*b+1.6180
+        log_mu = (b/(1+((T-analysis_temp)/310.93))**s)+c
+        mu_calc =10**log_mu
+    else:
+        T =t
+        mu = analysis_mu/(0.001*density(sg,analysis_temp))
+        c = -0.8696
+        b= np.log10(mu)-c
+        s = 0.2008*b+1.6180
+        log_mu = (b/(1+((T-analysis_temp)/310.93))**s)+c
+        mu_calc =(10**log_mu)*(0.001*density(sg,analysis_temp))
     return mu_calc
 def thermo_prop_LorGas(type):
         props = ['density', 'Cp','Cv', 'thermal conductivity','viscosity']
@@ -135,12 +165,13 @@ def thermo_prop_LorGas(type):
             except (ValueError): st.write('Please check your input')
 def main():
     
-    phases  = st.selectbox('fluids presesnt',('Liquid H.Cs', 'liquid', 'Gas'), key='phases')
+    phases  = st.selectbox('fluids presesnt',('Oil Fractions', 'liquid', 'Gas'), key='phases')
     if phases  == 'Gas':
         thermo_prop_LorGas('Gas')
     if phases == 'liquid':
         thermo_prop_LorGas('Liquid')
-    elif phases  == 'Liquid H.Cs':
+    elif phases  == 'Oil Fractions':
+        
         try:
             props = ['Cp','Cv', 'thermal conductivity','latent heat','viscosity']
             prop_calc_table = pd.DataFrame(index=props,columns=['Calculated_properties','Method'])
@@ -161,33 +192,15 @@ def main():
                 vis_1point_select  = st.selectbox('Calculate viscosity using 1 point?',('No', 'Yes'), key='vis_1pointer')
                 if vis_1point_select == 'Yes':
                     temperature_analysis = float(st.number_input('analysis Temperature in C', key='analysis_temp1'))
-                    vis_analysis = float(st.number_input('Viscosity at analysis temperature', key='analysis_vis'))
-                    viscosity_calc = vis_1point(temperature,temperature_analysis,vis_analysis)
+                    vis_analysis = float(st.number_input('Viscosity at analysis temperature in C.st', key='analysis_vis'))
+                    unit = st.checkbox('viscosity Unit is in cP not C.st')
+                    viscosity_calc = vis_1point(temperature,temperature_analysis,vis_analysis,sg,unit)
                     prop_calc_table.loc['viscosity','Calculated_properties'] = viscosity_calc
                     prop_calc_table.loc['viscosity','Method']= 'One point - A. Miadonye and V.R. Puttagunta'
                     
             
-            api = (141.5/sg) - 131.5
-            if api <=14.9:
-                eta= 0.00035
-            elif api <= 34.9:
-                eta= 0.0004
-            elif api <= 50.9:
-                eta= 0.0005
-            elif api <= 63.9:
-                eta= 0.0006
-            elif api <= 78.9:
-                eta= 0.0007
-            elif api <= 88.9:
-                eta= 0.0008
-            elif api <= 93.9:
-                eta= 0.00035 
-            elif api <= 100:
-                eta= 0.0009   
-            else: st.write("please enter a valid Specific gravity") 
-            density = sg*1000*(1-eta*((temperature*1.8+32)-60))
             prop_calc_table = thermo_prop(sg,temperature,prop_calc_table)
-            prop_calc_table.loc['Density'] = [density,'Nelson']
+            prop_calc_table.loc['density'] = [density(sg,temperature),'Nelson']
         except ZeroDivisionError: pass
         if st.button("Calculate", key = 'calculations_tableLiq'):
                 try:
@@ -225,6 +238,7 @@ def main():
                                 prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True).reindex(columns=['Calculated_properties', 'Units', 'Method'])
                         st.write(prop_calc_table)
                     else:
+                        
                         prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True).reindex(columns=['Calculated_properties', 'Units', 'Method'])
                         st.write(prop_calc_table)
                 except (ValueError,np.linalg.LinAlgError): st.write('Please check your points input')
