@@ -50,7 +50,7 @@ def density(sg,temperature):
                     eta= 0.00035 
                 elif api <= 100:
                     eta= 0.0009   
-                else: st.write("please enter a valid Specific gravity") 
+                else: st.write("please enter a valid Specific gravity or use user-defined compositions in Gases' option") 
                 density = sg*1000*(1-eta*((temperature*1.8+32)-60))
                 return density
 
@@ -79,6 +79,7 @@ def vis_1point(t,analysis_temp,analysis_mu,sg,unit):
         s = 0.2008*b+1.6180
         log_mu = (b/(1+((T-analysis_temp)/310.93))**s)+c
         mu_calc =10**log_mu
+        mu_calc = mu_calc/(0.001*density(sg,T))
     else:
         T =t
         mu = analysis_mu/(0.001*density(sg,analysis_temp))
@@ -224,7 +225,7 @@ def main():
             
             prop_calc_table = thermo_prop(sg,temperature,prop_calc_table)
             prop_calc_table.loc['density'] = [density(sg,temperature),'Nelson']
-        except ZeroDivisionError: pass
+        except (ZeroDivisionError,UnboundLocalError): pass
         if st.button("Calculate", key = 'calculations_tableLiq'):
                 try:
                     if two_points == 'Yes':
