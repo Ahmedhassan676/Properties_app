@@ -109,7 +109,12 @@ def thermo_prop_LorGas(type):
                         zs = [mole_fractions[i] if i in mole_fractions.keys() else 0 for i in c]
                         
                         gas_mixture = flasher.flash(P=pressure, T=temperature_K,zs=zs)
-                        
+                        if 'water' in mole_fractions.keys() and mole_fractions['water'] == 1 :
+                            gas = IAPWS95Gas(T=temperature_K, P=pressure, zs=zs)
+                            liq = IAPWS95Liquid(T=temperature_K, P=pressure, zs=zs)
+                            flasher_new= FlashPureVLS(constants, properties, liquids=[liq], gas=gas, solids=[])
+                            mix2 = flasher_new.flash(T=temperature_K, P=pressure, zs=zs)
+                            gas_mixture = mix2 
                         
                         prop_calc_table.loc['Phase','Calculated_properties'] = gas_mixture.phase
                         prop_calc_table.loc['Vapor Fraction','Calculated_properties'] = gas_mixture.VF
@@ -123,11 +128,7 @@ def thermo_prop_LorGas(type):
                         prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = gas_mixture.isentropic_exponent()
                         prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True, how='left')
                         prop_calc_table.loc[:,'Method']= 'Thermo Library'
-                        if 'water' in mole_fractions.keys() and mole_fractions['water'] == 1 :
-                            gas = IAPWS95Gas(T=temperature_K, P=pressure, zs=zs)
-                            liq = IAPWS95Liquid(T=temperature_K, P=pressure, zs=zs)
-                            flasher_new= FlashPureVLS(constants, properties, liquids=[liq], gas=gas, solids=[])
-                            prop_calc_table.loc['density','Calculated_properties'] = flasher_new.flash(T=temperature_K, P=pressure, zs=zs).rho_mass()
+                        
                         st.write(prop_calc_table)
                         
                             
@@ -155,7 +156,12 @@ def thermo_prop_LorGas(type):
                         zs = [mole_fractions[i] if i in mole_fractions.keys() else 0 for i in c]
                         
                         mixture = flasher.flash(P=pressure, T=temperature_K,zs=zs)
-                        
+                        if 'water' in mole_fractions.keys() and mole_fractions['water'] == 1 :
+                            gas = IAPWS95Gas(T=temperature_K, P=pressure, zs=zs)
+                            liq = IAPWS95Liquid(T=temperature_K, P=pressure, zs=zs)
+                            flasher_new= FlashPureVLS(constants, properties, liquids=[liq], gas=gas, solids=[])
+                            mix2 = flasher_new.flash(T=temperature_K, P=pressure, zs=zs)
+                            mixture = mix2 
                         
                         prop_calc_table.loc['Phase','Calculated_properties'] = mixture.phase
                         prop_calc_table.loc['Vapor Fraction','Calculated_properties'] = mixture.VF
@@ -169,11 +175,7 @@ def thermo_prop_LorGas(type):
                         prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = mixture.isentropic_exponent()
                         prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True, how='left')
                         prop_calc_table.loc[:,'Method']= 'Thermo Library'
-                        if 'water' in mole_fractions.keys() and mole_fractions['water'] == 1 :
-                            gas = IAPWS95Gas(T=temperature_K, P=pressure, zs=zs)
-                            liq = IAPWS95Liquid(T=temperature_K, P=pressure, zs=zs)
-                            flasher_new= FlashPureVLS(constants, properties, liquids=[liq], gas=gas, solids=[])
-                            prop_calc_table.loc['density','Calculated_properties'] = flasher_new.flash(T=temperature_K, P=pressure, zs=zs).rho_mass()
+                        
                         
                         #if 'water' in mole_fractions.keys():
                          #   mixture2 = Mixture([i for i in mole_fractions.keys()], ws=[i for i in mole_fractions.values()], T=temperature_K, P=pressure, pkg= GceosBase)
@@ -257,11 +259,11 @@ def main():
                                 prop_calc_table.loc[i,'Calculated_properties'] = viscosity
                                 prop_calc_table.loc[i,'Method']= 'Two Log points'
                                 prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True).reindex(columns=['Calculated_properties', 'Units', 'Method'])
-                        st.write(prop_calc_table)
+                        st.write(prop_calc_table.dropna(how='any'))
                     else:
                         
                         prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True).reindex(columns=['Calculated_properties', 'Units', 'Method'])
-                        st.write(prop_calc_table)
+                        st.write(prop_calc_table.dropna(how='any'))
                 except (ValueError,np.linalg.LinAlgError): st.write('Please check your points input')
 if __name__ == '__main__':
     main()
