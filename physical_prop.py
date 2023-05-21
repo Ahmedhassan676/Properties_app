@@ -4,8 +4,9 @@ import math
 import pandas as pd
 import numpy as np
 import streamlit as st
-from thermo import ChemicalConstantsPackage, PRMIX, CEOSLiquid, CEOSGas, FlashPureVLS
+from thermo import ChemicalConstantsPackage, PRMIX, CEOSLiquid, CEOSGas, FlashPureVLS,IAPWS95Gas,IAPWS95Liquid
 from thermo.interaction_parameters import IPDB
+from thermo.property_package import GceosBase
 
 gases_list = ['water', 'hydrogen', 'nitrogen', 'carbon dioxide', 'hydrogen sulfide','methane',
 'ethane', 'propane', 'isobutane', 'n-butane', 'isopentane', 'n-pentane', 'hexane',
@@ -88,7 +89,7 @@ def vis_1point(t,analysis_temp,analysis_mu,sg,unit):
         mu_calc =(10**log_mu)*(0.001*density(sg,analysis_temp))
     return mu_calc
 def thermo_prop_LorGas(type):
-        props = ['density', 'Cp','Cv', 'thermal conductivity','viscosity']
+        props = ['Phase','Vapor Fraction','density','Molecular Weight', 'Cp','Cv','K (Cp/Cv)', 'thermal conductivity','viscosity','Compressibility factor']
         prop_calc_table = pd.DataFrame(index=props,columns=['Calculated_properties'])
         if type == 'Gas':
             try:
@@ -100,8 +101,11 @@ def thermo_prop_LorGas(type):
                 
                 comp_table = st.experimental_data_editor(composition_table)
                 mole_fractions = {comp_table.index[i]: comp_table['mole fraction%'].astype('float64')[i]/100 for i in range(len(comp_table.index))}
+                if sum(comp_table['mole fraction%'].astype('float64')) == 100:
+                        st.success('Composition in Mol. percent completed!', icon="✅")
                 if st.button("Calculate", key = 'calculations_tablegas'):
                     if sum(comp_table['mole fraction%'].astype('float64')) == 100:
+                        
                         zs = [mole_fractions[i] if i in mole_fractions.keys() else 0 for i in c]
                         
                         gas_mixture = flasher.flash(P=pressure, T=temperature_K,zs=zs)
@@ -117,8 +121,13 @@ def thermo_prop_LorGas(type):
                         prop_calc_table.loc['Molecular Weight','Calculated_properties'] = gas_mixture.MW()
                         prop_calc_table.loc['Compressibility factor','Calculated_properties'] = gas_mixture.Z()
                         prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = gas_mixture.isentropic_exponent()
-                        prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True)
+                        prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True, how='left')
                         prop_calc_table.loc[:,'Method']= 'Thermo Library'
+                        if 'water' in mole_fractions.keys() and mole_fractions['water'] == 1 :
+                            gas = IAPWS95Gas(T=temperature_K, P=pressure, zs=zs)
+                            liq = IAPWS95Liquid(T=temperature_K, P=pressure, zs=zs)
+                            flasher_new= FlashPureVLS(constants, properties, liquids=[liq], gas=gas, solids=[])
+                            prop_calc_table.loc['density','Calculated_properties'] = flasher_new.flash(T=temperature_K, P=pressure, zs=zs).rho_mass()
                         st.write(prop_calc_table)
                         
                             
@@ -138,9 +147,10 @@ def thermo_prop_LorGas(type):
                 
                 
                 mole_fractions = {comp_table.index[i]: comp_table['Volume fraction%'].astype('float64')[i]/100 for i in range(len(comp_table.index))}
+                if sum(comp_table['Volume fraction%'].astype('float64')) == 100:
+                        st.success('Composition in Mol. percent completed!', icon="✅")
                 if st.button("Calculate", key = 'calculations_tableliquid'):
                     if sum(comp_table['Volume fraction%'].astype('float64')) == 100:
-                        
                         
                         zs = [mole_fractions[i] if i in mole_fractions.keys() else 0 for i in c]
                         
@@ -157,12 +167,23 @@ def thermo_prop_LorGas(type):
                         prop_calc_table.loc['Molecular Weight','Calculated_properties'] = mixture.MW()
                         prop_calc_table.loc['Compressibility factor','Calculated_properties'] = mixture.Z()
                         prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = mixture.isentropic_exponent()
-                        prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True)
+                        prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True, how='left')
                         prop_calc_table.loc[:,'Method']= 'Thermo Library'
+                        if 'water' in mole_fractions.keys() and mole_fractions['water'] == 1 :
+                            gas = IAPWS95Gas(T=temperature_K, P=pressure, zs=zs)
+                            liq = IAPWS95Liquid(T=temperature_K, P=pressure, zs=zs)
+                            flasher_new= FlashPureVLS(constants, properties, liquids=[liq], gas=gas, solids=[])
+                            prop_calc_table.loc['density','Calculated_properties'] = flasher_new.flash(T=temperature_K, P=pressure, zs=zs).rho_mass()
+                        
+                        #if 'water' in mole_fractions.keys():
+                         #   mixture2 = Mixture([i for i in mole_fractions.keys()], ws=[i for i in mole_fractions.values()], T=temperature_K, P=pressure, pkg= GceosBase)
+                          #  prop_calc_table.loc['density','Calculated_properties'] = mixture2.rho
                         st.write(prop_calc_table)
+
                         
             except IndexError: pass
             except (ValueError): st.write('Please check your input')
+        
 def main():
     
     phases  = st.selectbox('fluids presesnt',('Oil Fractions', 'liquid', 'Gas'), key='phases')
@@ -244,3 +265,4 @@ def main():
                 except (ValueError,np.linalg.LinAlgError): st.write('Please check your points input')
 if __name__ == '__main__':
     main()
+ 
