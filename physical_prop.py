@@ -128,7 +128,7 @@ def thermo_prop_LorGas(type):
                         prop_calc_table.loc['Compressibility factor','Calculated_properties'] = gas_mixture.Z()
                         prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = gas_mixture.isentropic_exponent()
                         prop_calc_table.loc['Enthalpy','Calculated_properties'] = gas_mixture.H_mass()/4184
-                        prop_calc_table.loc['LHV','Calculated_properties'] = gas_mixture.Hc_lower_mass() #/4184
+                        prop_calc_table.loc['LHV','Calculated_properties'] = -sum(pd.Series(zs)*pd.Series(gas_mixture.Hcs_lower_mass).fillna(0)*(pd.Series(gas_mixture.MWs)/gas_mixture.MW()))/4184
                         #st.write(-gas_mixture.Hc_lower_mass()) #/4184)
                         prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True, how='left')
                         prop_calc_table.loc[:,'Method']= 'Thermo Library'
@@ -184,7 +184,7 @@ def thermo_prop_LorGas(type):
                         prop_calc_table.loc['Compressibility factor','Calculated_properties'] = mixture.Z()
                         prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = mixture.isentropic_exponent()
                         prop_calc_table.loc['Enthalpy','Calculated_properties'] = mixture.H_mass()/4184
-                        prop_calc_table.loc['LHV','Calculated_properties'] = mixture.Hc_lower_mass()
+                        prop_calc_table.loc['LHV','Calculated_properties'] = -sum(pd.Series(zs)*pd.Series(mixture.Hcs_lower_mass).fillna(0)*(pd.Series(mixture.MWs)/mixture.MW()))/4184
                         prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True, how='left')
                         prop_calc_table.loc[:,'Method']= 'Thermo Library'
                         
