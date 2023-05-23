@@ -1,12 +1,12 @@
-from thermo import Mixture
-import fluids
-import math
+#from thermo import Mixture
+#import fluids
+#import math
 import pandas as pd
 import numpy as np
 import streamlit as st
 from thermo import ChemicalConstantsPackage, PRMIX, CEOSLiquid, CEOSGas, FlashPureVLS,IAPWS95Gas,IAPWS95Liquid
 from thermo.interaction_parameters import IPDB
-from thermo.property_package import GceosBase
+#from thermo.property_package import GceosBase
 
 gases_list = ['water', 'hydrogen', 'nitrogen', 'carbon dioxide', 'hydrogen sulfide','methane',
 'ethane', 'propane', 'isobutane', 'n-butane', 'isopentane', 'n-pentane', 'hexane',
@@ -127,6 +127,9 @@ def thermo_prop_LorGas(type):
                         prop_calc_table.loc['Molecular Weight','Calculated_properties'] = gas_mixture.MW()
                         prop_calc_table.loc['Compressibility factor','Calculated_properties'] = gas_mixture.Z()
                         prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = gas_mixture.isentropic_exponent()
+                        prop_calc_table.loc['Enthalpy','Calculated_properties'] = gas_mixture.H_mass()/4184
+                        prop_calc_table.loc['LHV','Calculated_properties'] = gas_mixture.Hc_lower_mass() #/4184
+                        #st.write(-gas_mixture.Hc_lower_mass()) #/4184)
                         prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True, how='left')
                         prop_calc_table.loc[:,'Method']= 'Thermo Library'
                         
@@ -157,23 +160,31 @@ def thermo_prop_LorGas(type):
                         zs = [mole_fractions[i] if i in mole_fractions.keys() else 0 for i in c]
                         
                         mixture = flasher.flash(P=pressure, T=temperature_K,zs=zs)
+                        #mixture_trial = Mixture([i for i in mole_fractions.keys()], ws=[i for i in mole_fractions.values()], T=temperature_K, P=pressure, pkg= GceosBase)
+                        #st.write(mixture_trial.rho)
                         if 'water' in mole_fractions.keys() and mole_fractions['water'] == 1 :
                             gas = IAPWS95Gas(T=temperature_K, P=pressure, zs=zs)
                             liq = IAPWS95Liquid(T=temperature_K, P=pressure, zs=zs)
                             flasher_new= FlashPureVLS(constants, properties, liquids=[liq], gas=gas, solids=[])
                             mix2 = flasher_new.flash(T=temperature_K, P=pressure, zs=zs)
                             mixture = mix2 
-                        
+                        if 'water' in mole_fractions.keys() and mole_fractions['water'] < 1 :
+                            prop_calc_table.loc['density','Calculated_properties'] = mixture.rho_mass()*(1+mole_fractions['water']*(998/847.38))
                         prop_calc_table.loc['Phase','Calculated_properties'] = mixture.phase
                         prop_calc_table.loc['Vapor Fraction','Calculated_properties'] = mixture.VF
                         prop_calc_table.loc['thermal conductivity','Calculated_properties'] = mixture.k()
-                        prop_calc_table.loc['density','Calculated_properties'] = mixture.rho_mass()
+                        
+                        if 'water' in mole_fractions.keys() and mole_fractions['water'] < 1 :
+                            prop_calc_table.loc['density','Calculated_properties'] = mixture.rho_mass()*(1+mole_fractions['water']*((998-847.38)/847.38))
+                            
                         prop_calc_table.loc['Cp','Calculated_properties'] = mixture.Cp_mass()/4184
                         prop_calc_table.loc['Cv','Calculated_properties'] = mixture.Cv_mass()/4184
                         prop_calc_table.loc['viscosity','Calculated_properties'] = mixture.mu()*1000
                         prop_calc_table.loc['Molecular Weight','Calculated_properties'] = mixture.MW()
                         prop_calc_table.loc['Compressibility factor','Calculated_properties'] = mixture.Z()
                         prop_calc_table.loc['K (Cp/Cv)','Calculated_properties'] = mixture.isentropic_exponent()
+                        prop_calc_table.loc['Enthalpy','Calculated_properties'] = mixture.H_mass()/4184
+                        prop_calc_table.loc['LHV','Calculated_properties'] = mixture.Hc_lower_mass()
                         prop_calc_table = prop_calc_table.merge(s.rename('Units'), left_index=True,right_index=True, how='left')
                         prop_calc_table.loc[:,'Method']= 'Thermo Library'
                         
