@@ -105,7 +105,7 @@ def thermo_prop_LorGas(type):
                 if sum(comp_table['mole fraction%'].astype('float64')) == 100:
                         st.success('Composition in Mol. percent completed!', icon="✅")
                 if st.button("Calculate", key = 'calculations_tablegas'):
-                    if sum(comp_table['mole fraction%'].astype('float64')) == 100:
+                    if int(sum(comp_table['mole fraction%'].astype('float64'))) == 100:
                         
                         zs = [mole_fractions[i] if i in mole_fractions.keys() else 0 for i in c]
                         
