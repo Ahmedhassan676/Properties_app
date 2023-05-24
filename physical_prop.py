@@ -170,6 +170,8 @@ def thermo_prop_LorGas(type):
                             mixture = mix2 
                         if 'water' in mole_fractions.keys() and mole_fractions['water'] < 1 :
                             prop_calc_table.loc['density','Calculated_properties'] = mixture.rho_mass()*(1+mole_fractions['water']*(998/847.38))
+                        else:
+                            prop_calc_table.loc['density','Calculated_properties'] = mixture.rho_mass()
                         prop_calc_table.loc['Phase','Calculated_properties'] = mixture.phase
                         prop_calc_table.loc['Vapor Fraction','Calculated_properties'] = mixture.VF
                         prop_calc_table.loc['thermal conductivity','Calculated_properties'] = mixture.k()
