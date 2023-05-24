@@ -102,7 +102,7 @@ def thermo_prop_LorGas(type):
                 
                 comp_table = st.experimental_data_editor(composition_table)
                 mole_fractions = {comp_table.index[i]: comp_table['mole fraction%'].astype('float64')[i]/100 for i in range(len(comp_table.index))}
-                if sum(comp_table['mole fraction%'].astype('float64')) == 100:
+                if int(sum(comp_table['mole fraction%'].astype('float64'))) == 100:
                         st.success('Composition in Mol. percent completed!', icon="✅")
                 if st.button("Calculate", key = 'calculations_tablegas'):
                     if int(sum(comp_table['mole fraction%'].astype('float64'))) == 100:
@@ -155,7 +155,7 @@ def thermo_prop_LorGas(type):
                 if sum(comp_table['Volume fraction%'].astype('float64')) == 100:
                         st.success('Composition in Mol. percent completed!', icon="✅")
                 if st.button("Calculate", key = 'calculations_tableliquid'):
-                    if sum(comp_table['Volume fraction%'].astype('float64')) == 100:
+                    if int(sum(comp_table['Volume fraction%'].astype('float64'))) == 100:
                         
                         zs = [mole_fractions[i] if i in mole_fractions.keys() else 0 for i in c]
                         
