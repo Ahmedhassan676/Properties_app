@@ -112,13 +112,17 @@ def thermo_prop_LorGas(type):
                         
                         zs = [mole_fractions[i] if i in mole_fractions.keys() else 0 for i in c]
                         
-                        gas_mixture = flasher.flash(P=pressure, T=temperature_K,zs=zs)
                         if 'water' in mole_fractions.keys() and mole_fractions['water'] == 1 :
                             gas = IAPWS95Gas(T=temperature_K, P=pressure, zs=zs)
                             liq = IAPWS95Liquid(T=temperature_K, P=pressure, zs=zs)
                             flasher_new= FlashPureVLS(constants, properties, liquids=[liq], gas=gas, solids=[])
                             mix2 = flasher_new.flash(T=temperature_K, P=pressure, zs=zs)
                             gas_mixture = mix2 
+                        else:
+                            gas = CEOSGas(PRMIX, eos_kwargs=eos_kwargs, HeatCapacityGases=correlations.HeatCapacityGases)
+                            liquid = CEOSLiquid(PRMIX, eos_kwargs=eos_kwargs, HeatCapacityGases=correlations.HeatCapacityGases)
+                            flasher = FlashPureVLS(constants, correlations, liquids=[liquid], gas=gas, solids=[])
+                            gas_mixture = flasher.flash(P=pressure, T=temperature_K,zs=zs)
                         
                         prop_calc_table.loc['Phase','Calculated_properties'] = gas_mixture.phase
                         prop_calc_table.loc['Vapor Fraction','Calculated_properties'] = gas_mixture.VF
